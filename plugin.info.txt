@@ -1,0 +1,7 @@
+base   threejs
+author Ben van Magill
+email  ben.vanmagill16@gmail.com
+date   2021-11-09
+name   threejs plugin
+desc   Syntax for embedding threejs components
+url    https://github.com/bennvan/dokuwiki-plugin-threejs
