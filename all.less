@@ -1,8 +1,16 @@
-.threejs-container {
+.threejs-canvas {
 	max-width: 100%;
 	max-height: 100%;
 	margin-top: 0;
-	margin-bottom: 1.2rem;
+	margin-bottom: 0.5rem;
+	background-color: @ini_background_alt;
+	border-radius: 2px;
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+
 	&.left {
 		float: left;
 		margin-right: 1.2rem;
@@ -17,4 +25,54 @@
 		margin-left: auto;
 		margin-right: auto;
 	}
+}
+
+.threejs-wrapper {
+
+	.threejs-model-download {
+	width: 24px;
+ 	height: 24px;
+ 	position: absolute;
+ 	right: 10px;
+ 	top: 10px;
+ 	z-index: 100;
+ 	background: url('/lib/tpl/bootstrap3/iconify.php?icon=mdi-download.svg&color=%23000');
+ 	background-size: cover;
+ 	opacity: 0;
+ 	transition: 0.2s ease-in-out;
+ 	border: 1px solid #9e9891;
+ 	border-radius: 5px;
+
+    }
+
+ 	&:hover .threejs-model-download {
+ 		opacity: 0.5;
+ 	}
+
+ 	.threejs-model-download:hover {
+ 		opacity: 1;
+ 		transform: scale(1.1);
+ 	}
+
+}
+
+
+.lds-dual-ring:after {
+  content: " ";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px auto 8px auto;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  border-color: #484848 transparent #484848 transparent;
+  animation: lds-dual-ring 1.2s linear infinite;
+}
+@keyframes lds-dual-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

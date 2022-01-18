@@ -12,3 +12,4 @@ $lang['cdn_o_custom'] = 'Custom CDN';
 $lang['customcdn_base'] = 'Retrieve the javascript files from this URL as base. eg.<code>https://cdn.skypack.dev/</code> ';
 $lang['customcdn_mod'] = 'Path to three js module (appended to base) eg.<code>three</code>';
 $lang['customcdn_ex'] = 'Path to three js examples folder (appended to base) eg. <code>three/examples/</code>';
+$lang['autoload_max_fsize'] = 'Autoload 3D scene for files smaller than the value specified in bytes. <code>2000000B = 2MB</code>';

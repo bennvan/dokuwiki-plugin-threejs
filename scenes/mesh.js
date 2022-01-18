@@ -8,11 +8,31 @@
   import * as THREE from '{{module}}'; //'https://cdn.skypack.dev/three';
   import { OrbitControls } from '{{examples}}jsm/controls/OrbitControls.js';
   import { STLLoader } from '{{examples}}jsm/loaders/STLLoader.js';
+  import { ThreeMFLoader } from '{{examples}}jsm/loaders/3MFLoader.js';
+
+  const container = document.getElementById("{{uid}}");
+  const buttLoadModel = container.getElementsByClassName('threejs-load')[0];
+  const url = "{{url}}";
 
   function init() {
+    if ("{{autoload}}" == true) {
+      initLoad();
+    } else {
+      buttLoadModel.addEventListener('click', initLoad);
+    }
+  }
 
-    const container = document.getElementById("{{uid}}");
-    const loader = new STLLoader();
+  function initLoad() {
+    buttLoadModel.disabled = true;
+    buttLoadModel.innerHTML = 'Loading...';
+    buttLoadModel.parentElement.classList.add('lds-dual-ring');
+    initScene();
+  }
+  
+  function initScene() {
+
+    let loader;
+    
     const scene = new THREE.Scene();
 
     // scene.background = new THREE.Color(0x8fbcd4);
@@ -51,26 +71,54 @@
       lights.main,
     );
 
-    
-    loader.load("{{url}}", function ( geometry ) {
-      // mesh
-      var material = new THREE.MeshPhongMaterial( {
-        color: 0x00398a,
-        polygonOffset: true,
-        polygonOffsetFactor: 1, // positive value pushes polygon further away
-        polygonOffsetUnits: 1
-      } );
-      var mesh = new THREE.Mesh( geometry, material );
-      scene.add( mesh )
-
-      // wireframe
-      var geo = new THREE.EdgesGeometry( mesh.geometry ); // or WireframeGeometry
-      var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-      var wireframe = new THREE.LineSegments( geo, mat );
-      mesh.add( wireframe );
-      zoomCameraToSelection(camera, controls, [mesh], 2);
-
+    // Generic model colour
+    var material = new THREE.MeshPhongMaterial( {
+      color: 0x00398a,
+      polygonOffset: true,
+      polygonOffsetFactor: 1, // positive value pushes polygon further away
+      polygonOffsetUnits: 1
     } );
+
+    if (url.endsWith('.stl')) {
+      const loader = new STLLoader();
+      loader.load(url, function ( geometry ) {
+        var mesh = new THREE.Mesh( geometry, material );
+        scene.add( mesh )
+
+        // wireframe
+        // var geo = new THREE.EdgesGeometry( mesh.geometry ); // or WireframeGeometry
+        // var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+        // var wireframe = new THREE.LineSegments( geo, mat );
+        // mesh.add( wireframe );
+
+        zoomCameraToSelection(camera, controls, [mesh], 1.5);
+
+      } );
+
+    } else if (url.endsWith('.3mf')) {
+        const manager = new THREE.LoadingManager();
+        const loader = new ThreeMFLoader( manager );
+        loader.load(url, function ( object ) {
+
+          object.traverse( function ( child ) {
+
+            if (child instanceof THREE.Mesh) {
+                if (!child.material) {
+                  child.material = material
+                  child.geometry.computeVertexNormals(true);
+                }
+            }
+
+          } );
+
+          scene.add( object );
+
+          zoomCameraToSelection(camera, controls, [object], 1.5);
+
+        } );
+  }
+
+    buttLoadModel.parentElement.remove();
 
     const renderer = createRenderer(container);
     renderer.shadowMap.enabled = true;
@@ -118,9 +166,6 @@
     });
   }
 
-  init();
-
-
   function zoomCameraToSelection(camera, controls, selection, fitRatio = 1.2) {
     const box = new THREE.Box3();
 
@@ -152,3 +197,5 @@
 
     controls.update();
 }
+
+init();

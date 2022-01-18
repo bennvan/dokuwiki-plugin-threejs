@@ -9,4 +9,5 @@ $conf['cdn'] = 'skypack'; //https://cdn.skypack.dev/three
 $conf['customcdn_base'] = '';
 $conf['customcdn_mod'] = '';
 $conf['customcdn_ex'] = '';
+$conf['autoload_max_fsize'] = 1500000;
 

@@ -65,10 +65,14 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
     /** Handle syntax */
     public function handle($match, $state, $pos, Doku_Handler $handler)
     {
+        // Strip the }} and trim whitespace
+        $match = trim(substr($match, 2, -2));
+        // Split the title
+        list($tmp, $title) = explode('|', $match, 2);
         // Try to split at ?, else &
-        list($link, $flags) = explode('?', $match, 2);
+        list($link, $flags) = explode('?', $tmp, 2);
         if (!$flags) {
-            list($link, $flags) = explode('&', $match, 2);
+            list($link, $flags) = explode('&', $tmp, 2);
         }
         $flags = str_replace(['&', '?'], ' ', $flags);
         $flags = explode(' ', $flags);
@@ -131,15 +135,33 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
             return true;
         }
 
+        // Set default values
+        $fsize = 0;
         if ($data['type'] === 'internalmedia') {
             resolve_mediaid(getNS($ID), $data['src'], $exists, $renderer->date_at, true);
-        } 
+            if ($exists) {
+                $fn = mediaFN($data['src']);
+                $fsize = filesize($fn);
+                $fsize_str = ($fsize >= 1<<20) ? number_format($fsize/(1<<20),2)."MB" : number_format($fsize/(1<<10),2)."KB";
+                $fname = basename($fn);
+            }
+            
+        }
+
         $data['url'] = ml($data['src']);
+        $data['fname'] = isset($fname) ? $fname.' ('.$fsize_str.')' : $data['src'];
+        $data['autoload'] = ($fsize && $fsize < $this->getConf('autoload_max_fsize'));
+
+        // Set the class instance context;
+        $this->context = $data;
+        // dbg($data);
+
+
         // Setup the styles
         $attrs = [
             'title' => '',
             'id'    => $data['uid'],
-            'class' => ['threejs-container'],
+            'class' => ['threejs-canvas'],
             'style' => ['width'=>'100%','height'=>'600px']
         ];
         $attrs['title'] = $data['title'];
@@ -147,14 +169,21 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         if (!empty($data['width'])) $attrs['style']['width'] = $data['width'].'px';
         if (!empty($data['height'])) $attrs['style']['height'] = $data['height'].'px';
 
-        // Set the class instance context;
-        $this->context = $data;
 
         // Render to the page
-        $renderer->doc .= '<div '.$this->buildAttributes($attrs).' >'.DOKU_LF;
-        $renderer->doc .= '<script type="module">'.DOKU_LF;
-        $renderer->doc .= $this->getScene();
-        $renderer->doc .= '</script>'.DOKU_LF.'</div>'.DOKU_LF;
+        $out  = '<div class="threejs-wrapper">';
+        $out .= '<a title="Download" href="'.$data['url'].'"class="threejs-model-download" role="button" rel="noopener"></a>';
+        $out .= '<div '.$this->buildAttributes($attrs).' >'.DOKU_LF;
+        $out .= '<div class="threejs-info">';
+        $out .= '<p>'.$data['fname'].'</p>';
+        $out .= '<button class="threejs-load">Load Model</button>';
+        $out .= '</div>';
+        $out .= '<script type="module">'.DOKU_LF;
+        $out .= $this->getScene();
+        $out .= '</script>'.DOKU_LF.'</div></div>'.DOKU_LF;
+
+
+        $renderer->doc .= $out; 
         return true;
     }
 

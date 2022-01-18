@@ -9,3 +9,4 @@ $meta['cdn'] = array('multichoice', '_choices' => array('local', 'skypack', 'cus
 $meta['customcdn_base'] = array('string');
 $meta['customcdn_mod'] = array('string');
 $meta['customcdn_ex'] = array('string');
+$meta['autoload_max_fsize'] = array('numeric', '_min' => 0);
