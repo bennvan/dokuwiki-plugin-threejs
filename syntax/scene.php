@@ -169,11 +169,14 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
             'title' => '',
             'id'    => $data['uid'],
             'class' => ['threejs-canvas'],
-            'style' => ['width'=>'100%','height'=>'600px']
+            'style' => ['width'=>'1920px','height'=>'600px']
         ];
         $attrs['title'] = $data['title'];
         $attrs['class'][] = $data['align'];
-        if (!empty($data['width'])) $attrs['style']['width'] = $data['width'].'px';
+        if (!empty($data['width'])) {
+            $attrs['style']['width'] = $data['width'].'px';
+            if (empty($data['height'])) $attrs['style']['height'] = $data['width']/16*9 .'px';
+        }
         if (!empty($data['height'])) $attrs['style']['height'] = $data['height'].'px';
 
 
