@@ -112,6 +112,13 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
                 $ex = '';
                 break;
         }
+
+        foreach($flags as &$flag) {
+            // Try to split key from variable
+            list($key, $val) = explode('=', $flag, 2);
+            if (empty($val)) $val = true;
+            $p[$key] = hsc($val);
+        }
         $p['source'] = $base;
         $p['module'] = $mod;
         $p['examples'] = $ex;
