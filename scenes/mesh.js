@@ -35,25 +35,29 @@
   
   function initScene() {
 
-    let loader;
-    
     const scene = new THREE.Scene();
 
     // scene.background = new THREE.Color(0x8fbcd4);
     scene.background = new THREE.Color( 0xb0b0b0 );
-    scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+    // scene.fog = new THREE.Fog( 0xa0a0a0, 10, 500 );
 
-    const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.6 );
-    directionalLight.position.set( 0.75, 0.75, 1.0 ).normalize();
-    scene.add( directionalLight );
+    const ground = new THREE.Mesh( 
+      new THREE.PlaneGeometry( 40000, 40000), 
+      new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } ) 
+    );
+    // ground.rotation.x = - Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add( ground );
 
-    const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.2 );
-    scene.add( ambientLight );
-
-    const grid = new THREE.GridHelper( 4000, 200, 0xffffff, 0x555555 );
+    const grid = new THREE.GridHelper( 40000, 2000, 0xffffff, 0x555555 );
     grid.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), 90 * ( Math.PI / 180 ) );
     scene.add( grid );
 
+    const lights = createLights()
+          scene.add(
+            lights.ambient,
+            lights.hemi,
+          );
 
     // Camera
     const camera = new THREE.PerspectiveCamera(
@@ -68,46 +72,68 @@
     controls.target.set( 0, 1.2, 2 );
     controls.update();
 
-    const lights = createLights();
+    let model_color, user_color;
 
-    scene.add(
-      lights.ambient,
-      lights.main,
-    );
+    if ("{{color}}" !== ""){
+      user_color = true;
+      model_color = "{{color}}";
+    } else {
+      model_color = 0x00398a;
+    }
 
     // Generic model colour
     var material = new THREE.MeshPhongMaterial( {
-      color: 0x00398a,
+      color: model_color,
       polygonOffset: true,
       polygonOffsetFactor: 1, // positive value pushes polygon further away
       polygonOffsetUnits: 1
     } );
 
+    const manager = new THREE.LoadingManager( () => {
+          buttLoadModel.parentElement.classList.add('fade-out');
+          buttLoadModel.parentElement.addEventListener('transitionend', onTransitionEnd);
+    });
+
     if (url.endsWith('.stl')) {
-      const loader = new STLLoader();
+      const loader = new STLLoader( manager );
       loader.load(url, function ( geometry ) {
         var mesh = new THREE.Mesh( geometry, material );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         scene.add( mesh )
 
         // wireframe
-        // var geo = new THREE.EdgesGeometry( mesh.geometry ); // or WireframeGeometry
-        // var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-        // var wireframe = new THREE.LineSegments( geo, mat );
-        // mesh.add( wireframe );
+        if ("{{wireframe}}" == true) {
+          var geo = new THREE.EdgesGeometry( mesh.geometry ); // or WireframeGeometry
+          var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+          var wireframe = new THREE.LineSegments( geo, mat );
+          mesh.add( wireframe );
+        }
 
         zoomCameraToSelection(camera, controls, [mesh], 1.5);
+        const shadowlight = createShadowLight([mesh]);
+        scene.add(shadowlight);
 
       } );
 
+
+
     } else if (url.endsWith('.3mf')) {
-        const manager = new THREE.LoadingManager();
         const loader = new ThreeMFLoader( manager );
         loader.load(url, function ( object ) {
 
           object.traverse( function ( child ) {
+            child.castShadow = true;
 
             if (child instanceof THREE.Mesh) {
-                if (!child.material) {
+              // wireframe
+              if ("{{wireframe}}" == true) {
+                var geo = new THREE.EdgesGeometry( child.geometry ); // or WireframeGeometry
+                var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+                var wireframe = new THREE.LineSegments( geo, mat );
+                child.add( wireframe );
+              }
+                if (user_color) {
                   child.material = material
                   child.geometry.computeVertexNormals(true);
                 }
@@ -118,14 +144,16 @@
           scene.add( object );
 
           zoomCameraToSelection(camera, controls, [object], 1.5);
+          const shadowlight = createShadowLight([object]);
+          scene.add(shadowlight);
+          
 
         } );
   }
 
-    buttLoadModel.parentElement.remove();
-
     const renderer = createRenderer(container);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     setupOnWindowResize(camera, container, renderer);
 
     renderer.setAnimationLoop(() => {
@@ -133,15 +161,53 @@
     });
   }
 
-  function createLights() {
-    const ambient = new THREE.HemisphereLight(0xddeeff, 0x0f0e0d, 5);
+  function createShadowLight(selection) {
+    const box = new THREE.Box3();
 
-    const main = new THREE.DirectionalLight(0xffffff, 5);
-    main.position.set(10, 10, 10);
+    for (const object of selection) box.expandByObject(object);
+
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    const maxSize = Math.max(size.x, size.y, size.z);
+
+    // Dirlight
+    const d = maxSize;
+    const dir = new THREE.DirectionalLight( 0xffffff, 2.5 );
+    dir.position.set( size.x/2, size.y/2, size.z*2);
+
+    dir.castShadow = true;
+
+    dir.shadow.camera.left = - d;
+    dir.shadow.camera.right = d;
+    dir.shadow.camera.top = d;
+    dir.shadow.camera.bottom = - d;
+
+    dir.shadow.camera.near = d/100;
+    dir.shadow.camera.far = d*2;
+
+    dir.shadow.bias = - 0.002;
+
+    return dir;
+  }
+
+  function createLights() {
+    // hemilight
+    const hemi = new THREE.HemisphereLight(0xddeeff, 0x0f0e0d, 2);
+
+    // ambientlight
+    const ambient = new THREE.AmbientLight( 0xcccccc, 1 );
+
+    // Dirlight
+    // const dir = new THREE.DirectionalLight( 0xffffff, 0.6 );
+    // dir.position.set( 0.75, 0.75, 1.0 ).normalize();
+
+    // const main = new THREE.DirectionalLight(0xffffff, 5);
+    // main.position.set(10, 10, 10);
 
     return {
       ambient,
-      main
+      hemi,
     };
   }
 
@@ -151,8 +217,8 @@
 
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    renderer.gammaFactor = 2.2;
-    renderer.gammaOutput = true;
+    // renderer.gammaFactor = 2.2;
+    renderer.outputEncoding = THREE.sRGBEncoding;
 
     renderer.physicallyCorrectLights = true;
 
@@ -200,6 +266,12 @@
     camera.position.copy(controls.target).sub(direction);
 
     controls.update();
-}
+  }
+
+  function onTransitionEnd( event ) {
+
+    event.target.remove();
+  
+  }
 
 init();
