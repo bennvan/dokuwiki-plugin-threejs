@@ -74,12 +74,11 @@
 
     let model_color, user_color;
 
+    model_color = 0x00398a;
     if ("{{color}}" !== ""){
       user_color = true;
-      model_color = "{{color}}";
-    } else {
-      model_color = 0x00398a;
-    }
+      if ("{{color}}" !== "1") model_color = "{{color}}";
+    } 
 
     // Generic model colour
     var material = new THREE.MeshPhongMaterial( {
