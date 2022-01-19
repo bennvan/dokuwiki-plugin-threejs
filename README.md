@@ -23,6 +23,7 @@ Syntax is identical to dokuwiki media.
 | ..x.. | Width and height in px. If only one value it is assumed width, and height is calculated to maintain 16:9 aspect ratio.  | 100% width, 600px |
 | wireframe | Display mesh wireframe | Disabled | 
 | color | W3C color name or hex value | #00398a |
+| linkonly | Don't render canvas, only link to download | Disabled |
 
 
 ### Examples:
