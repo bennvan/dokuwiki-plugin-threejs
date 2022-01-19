@@ -15,7 +15,7 @@
   const url = "{{url}}";
 
   function init() {
-    if ("{{autoload}}" == true) {
+    if ("{{autoload}}" == true && !(isMobile())) {
       initLoad();
     } else {
       buttLoadModel.addEventListener('click', initLoad);
@@ -27,6 +27,10 @@
     buttLoadModel.innerHTML = 'Loading...';
     buttLoadModel.parentElement.classList.add('lds-dual-ring');
     initScene();
+  }
+
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
   
   function initScene() {
