@@ -39,19 +39,6 @@
 
     // scene.background = new THREE.Color(0x8fbcd4);
     scene.background = new THREE.Color( 0xb0b0b0 );
-    // scene.fog = new THREE.Fog( 0xa0a0a0, 10, 500 );
-
-    const ground = new THREE.Mesh( 
-      new THREE.PlaneGeometry( 40000, 40000), 
-      new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } ) 
-    );
-    // ground.rotation.x = - Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add( ground );
-
-    const grid = new THREE.GridHelper( 40000, 2000, 0xffffff, 0x555555 );
-    grid.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), 90 * ( Math.PI / 180 ) );
-    scene.add( grid );
 
     const lights = createLights()
           scene.add(
@@ -96,22 +83,35 @@
     if (url.endsWith('.stl')) {
       const loader = new STLLoader( manager );
       loader.load(url, function ( geometry ) {
-        var mesh = new THREE.Mesh( geometry, material );
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        scene.add( mesh )
+        var object = new THREE.Mesh( geometry, material );
+        object.castShadow = true;
+        object.receiveShadow = true;
+        scene.add( object )
 
         // wireframe
         if ("{{wireframe}}" == true) {
-          var geo = new THREE.EdgesGeometry( mesh.geometry ); // or WireframeGeometry
+          var geo = new THREE.EdgesGeometry( object.geometry ); // or WireframeGeometry
           var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
           var wireframe = new THREE.LineSegments( geo, mat );
-          mesh.add( wireframe );
+          object.add( wireframe );
         }
 
-        zoomCameraToSelection(camera, controls, [mesh], 1.5);
-        const shadowlight = createShadowLight([mesh]);
+        // Zoom camera to size of model
+        zoomCameraToSelection(camera, controls, [object], 1.5);
+
+        // Create light for shadow.
+        var bounds = getBoundingSize([object]);
+        const shadowlight = createShadowLight(bounds.size.x, bounds.size.y, bounds.size.z, bounds.maxSize);
         scene.add(shadowlight);
+
+        // Create floor
+        const floor = createFloor(bounds.maxSize);
+        floor.grid.position.set( bounds.center.x, bounds.center.y, 0 );
+        floor.plane.position.set( bounds.center.x, bounds.center.y, 0 );
+        scene.add(floor.grid, floor.plane);
+
+        // Add fog
+        scene.fog = new THREE.Fog( 0xa0a0a0, bounds.maxSize/100, bounds.maxSize*50 );
 
       } );
 
@@ -142,10 +142,22 @@
 
           scene.add( object );
 
+          // Zoom camera to size of model
           zoomCameraToSelection(camera, controls, [object], 1.5);
-          const shadowlight = createShadowLight([object]);
+
+          // Create light for shadow.
+          var bounds = getBoundingSize([object]);
+          const shadowlight = createShadowLight(bounds.size.x, bounds.size.y, bounds.size.z, bounds.maxSize);
           scene.add(shadowlight);
-          
+
+          // Create floor
+          const floor = createFloor(bounds.maxSize);
+          floor.grid.position.set( bounds.center.x, bounds.center.y, 0 );
+          floor.plane.position.set( bounds.center.x, bounds.center.y, 0 );
+          scene.add(floor.grid, floor.plane);
+
+          // Add fog
+          scene.fog = new THREE.Fog( 0xa0a0a0, bounds.maxSize/100, bounds.maxSize*50 );
 
         } );
   }
@@ -160,7 +172,7 @@
     });
   }
 
-  function createShadowLight(selection) {
+  function getBoundingSize(selection) {
     const box = new THREE.Box3();
 
     for (const object of selection) box.expandByObject(object);
@@ -169,11 +181,36 @@
     const center = box.getCenter(new THREE.Vector3());
 
     const maxSize = Math.max(size.x, size.y, size.z);
+    return {
+      size,
+      center,
+      maxSize
+    }
+  }
+
+  function createFloor(maxSize) {
+    var size = maxSize*2,
+        divisions = size/20
+    const grid = new THREE.GridHelper( size, divisions , 0xffffff, 0x555555 );
+    grid.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), 90 * ( Math.PI / 180 ) );
+
+    const plane = new THREE.Mesh( 
+      new THREE.PlaneGeometry( size, size), 
+      new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } ) 
+    );
+    plane.receiveShadow = true;
+
+    return {
+      grid,
+      plane
+    }
+  }
+
+  function createShadowLight(x, y, z, d) {
 
     // Dirlight
-    const d = maxSize;
     const dir = new THREE.DirectionalLight( 0xffffff, 2.5 );
-    dir.position.set( size.x/2, size.y/2, size.z*2);
+    dir.position.set( x/2, y/2, z*2);
 
     dir.castShadow = true;
 
