@@ -5,10 +5,10 @@
 //  @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
 //  @author  Ben van Magill <ben.vanmagill16@gmail.com>
 
-  import * as THREE from '{{module}}'; //'https://cdn.skypack.dev/three';
-  import { OrbitControls } from '{{examples}}jsm/controls/OrbitControls.js';
-  import { STLLoader } from '{{examples}}jsm/loaders/STLLoader.js';
-  import { ThreeMFLoader } from '{{examples}}jsm/loaders/3MFLoader.js';
+  import * as THREE from 'three';
+  import { OrbitControls } from '{{examples}}/jsm/controls/OrbitControls.js';
+  import { STLLoader } from '{{examples}}/jsm/loaders/STLLoader.js';
+  import { ThreeMFLoader } from '{{examples}}/jsm/loaders/3MFLoader.js';
 
   const container = document.getElementById("{{uid}}");
   const buttLoadModel = container.getElementsByClassName('threejs-load')[0];

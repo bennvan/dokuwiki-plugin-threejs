@@ -9,6 +9,10 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
 {
 
     // Setup class variables
+
+    /** @var $helper helper_plugin_threejs */
+    var $helper = null;
+
     public $scene = null; // Path to the template script 
     public $ext   = 'PLUGIN_THREEJS'; // File Extension to connect pattern. Be mindful of potential conflicts with other media syntax pugins 
     public $context = [];
@@ -65,6 +69,10 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
     /** Handle syntax */
     public function handle($match, $state, $pos, Doku_Handler $handler)
     {
+        // Load the helper
+        if (!$this->$helper)
+                $this->$helper = plugin_load('helper', 'threejs');
+
         // Strip the }} and trim whitespace
         $match = trim(substr($match, 2, -2));
         // Split the title
@@ -89,29 +97,7 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         $p['uid'] = substr(md5(uniqid()),0,4);
         $p['flags'] = $flags;
 
-        switch ($this->getConf('cdn')) {
-            case 'local':
-                $base = DOKU_PLUGIN.'threejs/vendor/three.js/';
-                $mod = $base.'three.module.js';
-                $ex = $base.'examples/';
-                break;
-            case 'skypack':
-                $base = 'https://cdn.skypack.dev/';
-                $mod = $base.'three';
-                $ex = $base.'three/examples/';
-                break;
-            case 'custom':
-                $base = $this->getConf('customcnd_base');
-                $mod = $base.$this->getConf('customcnd_mod');
-                $ex = $base.$this->getConf('customcnd_ex');
-                break;
-            
-            default:
-                $base = '';
-                $mod = '';
-                $ex = '';
-                break;
-        }
+        list($base, $mod, $ex) = $this->$helper->getPaths();
 
         foreach($flags as &$flag) {
             // Try to split key from variable
