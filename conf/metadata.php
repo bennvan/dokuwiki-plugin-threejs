@@ -5,7 +5,8 @@
  * @author Ben van Magill <ben.vanmagill16@gmail.com>
  */
 
-$meta['cdn'] = array('multichoice', '_choices' => array('local', 'skypack', 'custom'));
+$meta['cdn'] = array('multichoice', '_choices' => array('local', 'unpkg', 'custom'));
+$meta['cdn_version'] = array('string');
 $meta['customcdn_base'] = array('string');
 $meta['customcdn_mod'] = array('string');
 $meta['customcdn_ex'] = array('string');
