@@ -9,7 +9,7 @@ class syntax_plugin_threejs_3mf extends syntax_plugin_threejs_scene
 {
 
     // Setup class variables
-    public $scene = 'mesh'; // Path to the template js script on server
+    public $scene = 'default'; // Path to the template js script on server
     public $ext   = '3mf'; // File Extension to connect pattern. Be mindful of potential conflicts with other media syntax pugins 
 
 }
