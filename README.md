@@ -1,16 +1,17 @@
 # threejs plugin for DokuWiki
 
-Syntax for embedding threejs components. Currently only mesh files supported. 
+Syntax for embedding threejs components.
 
 ![Example output](example.png "Example output")
 
 
 ## Features
 
- - Support for displaying mesh file formats (3MF, STL)
- - Flags to set model colour and wireframe
- - Autoload scene if file size is small (default = 0.5mb), except when on a mobile device.
- - Integrated with dokuwiki move plugin to re-write links accordingly
+ - Supports formats STL, 3MF, VRML and simple to add more. 
+ - Flags to set model colour and wireframe etc
+ - Auto-load scene if file size is small (default = 0.5mb), except when on a mobile device.
+ - Auto-fit model to view on load, and adjust lighting and shadowing accordingly. 
+ - Integrated with dokuwiki move plugin to re-write links.
  - Works with other plugins such as latexcaption
 
 ## Syntax
@@ -23,6 +24,7 @@ Syntax is identical to dokuwiki media.
 | ..x.. | Width and height in px. If only one value it is assumed width, and height is calculated to maintain 16:9 aspect ratio.  | 100% width, 600px |
 | wireframe | Display mesh wireframe | Disabled | 
 | color | W3C color name or hex value | #00398a |
+| nofloor | Removes the floor and grid in scene | Disabled |
 | linkonly | Don't render canvas, only link to download | Disabled |
 
 
