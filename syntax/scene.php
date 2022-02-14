@@ -143,7 +143,11 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
 
         $data['url'] = ml($data['src']);
         $data['fname'] = isset($fname) ? $fname.' ('.$fsize_str.')' : $data['src'];
-        $data['autoload'] = ($fsize && $fsize < $this->getConf('autoload_max_fsize'));
+        if ($data['noautoload']){
+            $data['autoload'] = false;
+        } else {
+            $data['autoload'] = ($fsize && $fsize < $this->getConf('autoload_max_fsize'));
+        }
 
         // Set the class instance context;
         $this->context = $data;

@@ -26,6 +26,7 @@ Syntax is identical to dokuwiki media.
 | color | W3C color name or hex value | #00398a |
 | nofloor | Removes the floor and grid in scene | Disabled |
 | linkonly | Don't render canvas, only link to download | Disabled |
+| noautoload | Don't auto load the canvas even if filesize less than threshold | Disabled |
 
 
 ### Examples:
