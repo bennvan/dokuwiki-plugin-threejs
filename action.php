@@ -9,7 +9,7 @@ use dokuwiki\Extension\Event;
 
 class action_plugin_threejs extends ActionPlugin
 {   
-    /** @var $helper helper_plugin_latexcaption */
+    /** @var $helper helper_plugin_threejs */
     var $helper = null;
 
     /**
@@ -24,7 +24,9 @@ class action_plugin_threejs extends ActionPlugin
     }
 
     public function handle_move_register(Event $event) {
-        $event->data['handlers']['threejs'] = array($this, 'rewrite_media');
+        foreach (array('stl', '3mf', 'wrl', 'vrml') as $component) {
+            $event->data['handlers']['threejs_' . $component] = array($this, 'rewrite_media');
+        }
     }
 
     public function rewrite_media($match, $state, $pos, $pluginname, helper_plugin_move_handler $handler) {

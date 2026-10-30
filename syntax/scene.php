@@ -60,7 +60,7 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
                 }  
             }
             if ($value) {
-                $html_attributes[] = "$attribute=\"$value\"";
+                $html_attributes[] = $attribute . '="' . hsc($value) . '"';
             }
         }
         return implode(' ', $html_attributes);
@@ -70,22 +70,28 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
     public function handle($match, $state, $pos, Doku_Handler $handler)
     {
         // Load the helper
-        if (!$this->$helper)
-                $this->$helper = plugin_load('helper', 'threejs');
+        if (!$this->helper)
+                $this->helper = plugin_load('helper', 'threejs');
 
-        // Strip the }} and trim whitespace
-        $match = trim(substr($match, 2, -2));
+        // Keep the original markup for media alignment; parse custom flags separately.
+        $mediaMatch = $match;
+        $match = substr($match, 2, -2);
         // Split the title
-        list($tmp, $title) = explode('|', $match, 2);
+        list($tmp, $title) = array_pad(explode('|', $match, 2), 2, null);
         // Try to split at ?, else &
-        list($link, $flags) = explode('?', $tmp, 2);
-        if (!$flags) {
-            list($link, $flags) = explode('&', $tmp, 2);
+        list($link, $flags) = array_pad(explode('?', $tmp, 2), 2, '');
+        if (strpos($tmp, '?') === false && !media_isexternal(trim($tmp))) {
+            list($link, $flags) = array_pad(explode('&', $tmp, 2), 2, '');
+            if ($flags !== '') {
+                $mediaMatch = '{{' . $link . '?' . $flags . ($title === null ? '' : '|' . $title) . '}}';
+            }
         }
         $flags = str_replace(['&', '?'], ' ', $flags);
-        $flags = explode(' ', $flags);
+        $flags = preg_split('/\s+/', trim($flags), -1, PREG_SPLIT_NO_EMPTY);
 
-        $p = Doku_Handler_Parse_Media($match);
+        $p = class_exists(\dokuwiki\Parsing\ParserMode\Media::class)
+            ? \dokuwiki\Parsing\ParserMode\Media::parseMedia($mediaMatch)
+            : Doku_Handler_Parse_Media($mediaMatch);
         
         $handler->addCall(
                     $p['type'],
@@ -97,12 +103,12 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         $p['uid'] = substr(md5(uniqid()),0,4);
         $p['flags'] = $flags;
 
-        list($base, $mod, $ex) = $this->$helper->getPaths();
+        list($base, $mod, $ex) = $this->helper->getPaths();
 
-        foreach($flags as &$flag) {
+        foreach($flags as $flag) {
             // Try to split key from variable
-            list($key, $val) = explode('=', $flag, 2);
-            if (empty($val)) $val = true;
+            list($key, $val) = array_pad(explode('=', $flag, 2), 2, '1');
+            if ($val === '') $val = '1';
             $p[$key] = hsc($val);
         }
         $p['source'] = $base;
@@ -123,7 +129,8 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         global $ID;
 
         if ($data['linking'] === 'linkonly') {
-            $renderer->internalmedia($data['src'], $data['title'], $data['align'], $data['width'], $data['height'],
+            $method = $data['type'] === 'externalmedia' ? 'externalmedia' : 'internalmedia';
+            $renderer->$method($data['src'], $data['title'], $data['align'], $data['width'], $data['height'],
                 $data['cache'], $data['linking']);
             return true;
         }
@@ -131,7 +138,8 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         // Set default values
         $fsize = 0;
         if ($data['type'] === 'internalmedia') {
-            resolve_mediaid(getNS($ID), $data['src'], $exists, $renderer->date_at, true);
+            $data['src'] = (new \dokuwiki\File\MediaResolver($ID))->resolveId($data['src'], $renderer->date_at, true);
+            $exists = media_exists($data['src'], $renderer->date_at, false, true);
             if ($exists) {
                 $fn = mediaFN($data['src']);
                 $fsize = filesize($fn);
@@ -141,9 +149,9 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
             
         }
 
-        $data['url'] = ml($data['src']);
+        $data['url'] = ml($data['src'], '', true, '&');
         $data['fname'] = isset($fname) ? $fname.' ('.$fsize_str.')' : $data['src'];
-        if ($data['noautoload']){
+        if (!empty($data['noautoload'])){
             $data['autoload'] = false;
         } else {
             $data['autoload'] = ($fsize && $fsize < $this->getConf('autoload_max_fsize'));
@@ -172,10 +180,10 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
 
         // Render to the page
         $out  = '<div class="threejs-wrapper">';
-        $out .= '<a title="Download" href="'.$data['url'].'"class="threejs-model-download" role="button" rel="noopener"></a>';
+        $out .= '<a title="Download" href="'.hsc($data['url']).'" class="threejs-model-download" role="button" rel="noopener"></a>';
         $out .= '<div '.$this->buildAttributes($attrs).' >'.DOKU_LF;
         $out .= '<div class="threejs-info">';
-        $out .= '<p>'.$data['fname'].'</p>';
+        $out .= '<p>'.hsc($data['fname']).'</p>';
         $out .= '<button class="threejs-load">Load Model</button>';
         $out .= '</div>';
         $out .= '<script type="module">'.DOKU_LF;
@@ -191,7 +199,7 @@ class syntax_plugin_threejs_scene extends \dokuwiki\Extension\SyntaxPlugin
         $content = file_get_contents(DOKU_PLUGIN.'threejs/scenes/'.$this->scene.'.js');
         $content = preg_replace_callback('/{{([a-zA-Z0-9_-]+)}}/', 
             function ($match) {
-                return $this->context[$match[1]];
+                return $this->context[$match[1]] ?? '';
             }, 
             $content
         );

@@ -16,7 +16,7 @@ class helper_plugin_threejs extends \dokuwiki\Extension\Plugin {
 
         switch ($this->getConf('cdn')) {
             case 'local':
-                $base = DOKU_PLUGIN.'threejs/vendor/three.js';
+                $base = DOKU_BASE.'lib/plugins/threejs/vendor/three.js';
                 $mod = $base.'/three.module.js';
                 $ex = $base.'/examples';
                 break;
@@ -26,9 +26,9 @@ class helper_plugin_threejs extends \dokuwiki\Extension\Plugin {
                 $ex = $base.'/examples';
                 break;
             case 'custom':
-                $base = $this->getConf('customcnd_base');
-                $mod = $base.$this->getConf('customcnd_mod');
-                $ex = $base.$this->getConf('customcnd_ex');
+                $base = $this->getConf('customcdn_base');
+                $mod = $base.$this->getConf('customcdn_mod');
+                $ex = $base.$this->getConf('customcdn_ex');
                 break;
             
             default:
